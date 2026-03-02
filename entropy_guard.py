@@ -1,12 +1,13 @@
 import os
 import time
 import math
-from collections import Counter
+from collections import deque, Counter
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 WATCH_DIR = os.path.join(os.path.expanduser('~'), 'Documents')
 ENTROPY_THRESHOLD = 7.5
+file_events = deque(maxlen=50)
 def calculate_entropy(file_path):
     """Ultra-fast calculation with File-Lock bypass."""
     for attempt in range(3):
@@ -59,6 +60,13 @@ class FrameworkFileSystemHandler(FileSystemEventHandler):
         score = calculate_entropy(filepath)
         if score > ENTROPY_THRESHOLD:
             print(f"\n[!!!] HIGH ENTROPY ALARM (Score: {score:.2f}/8.0) [!!!]")
+        current_time = time.time()
+        file_events.append((filepath, current_time))
+        recent_unique_files = set(path for path, t in file_events if current_time - t <= 1.0)
+        unique_file_count = len(recent_unique_files)
+        if unique_file_count > 4:
+            print(f"\n[!!!] RAPID FILE TRAVERSAL DETECTED ({unique_file_count} unique files/sec) [!!!]")
+            file_events.clear()
 
 if __name__ == "__main__":
     if not os.path.exists(WATCH_DIR): os.makedirs(WATCH_DIR)
