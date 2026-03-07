@@ -1,12 +1,32 @@
 import os
 import time
 import math
+import psutil
 from collections import deque, Counter
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 WATCH_DIR = os.path.join(os.path.expanduser('~'), 'Documents')
 ENTROPY_THRESHOLD = 7.5
+TRUSTED_WHITELIST = ["msmpeng.exe", "searchindexer.exe", "explorer.exe", "system", "svchost.exe", "pycharm64.exe", "python.exe"]
+MALICIOUS_COMMANDS = ["vssadmin delete shadows", "wmic shadowcopy delete", "bcdedit /set {default} recoveryenabled no"]
+
+def process_watcher_thread():
+    while True:
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                proc_name = proc.info['name'].lower() if proc.info['name'] else ""
+                if proc_name in TRUSTED_WHITELIST: continue
+                cmdline = proc.info['cmdline']
+                if cmdline:
+                    cmd_str = " ".join(cmdline).lower()
+                    for bad_cmd in MALICIOUS_COMMANDS:
+                        if bad_cmd in cmd_str:
+                            print(f"\n[!!!] PRE-ENCRYPTION SETUP DETECTED [!!!]")
+                            proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        time.sleep(1)
 file_events = deque(maxlen=50)
 def calculate_entropy(file_path):
     """Ultra-fast calculation with File-Lock bypass."""
