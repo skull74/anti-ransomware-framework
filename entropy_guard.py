@@ -2,6 +2,7 @@ import os
 import time
 import math
 import psutil
+import threading
 from collections import deque, Counter
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -90,6 +91,8 @@ class FrameworkFileSystemHandler(FileSystemEventHandler):
 
 if __name__ == "__main__":
     if not os.path.exists(WATCH_DIR): os.makedirs(WATCH_DIR)
+    watcher = threading.Thread(target=process_watcher_thread, daemon=True)
+    watcher.start()
     event_handler = FrameworkFileSystemHandler()
     observer = Observer()
     observer.schedule(event_handler, WATCH_DIR, recursive=True)
