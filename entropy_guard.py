@@ -74,7 +74,30 @@ def is_header_valid(file_path):
     except Exception:
         return 0.0
 
+ 
+# ==========================================
 class FrameworkFileSystemHandler(FileSystemEventHandler):
+def execute_kill_switch(attacked_file_path):
+    print("\n[>>>] INITIATING EDR LINEAGE & HEURISTIC TERMINATION...")
+    threat_killed = False
+    for proc in psutil.process_iter(['pid', 'name', 'exe']):
+        try:
+            proc_name = proc.info['name'].lower() if proc.info['name'] else ""
+            exe_path = proc.info.get('exe')
+            if not exe_path: continue
+            exe_path_lower = exe_path.lower()
+
+            if "c:\\users\\" in exe_path_lower and "python" not in exe_path_lower and "pycharm" not in exe_path_lower:
+                try:
+                    children = proc.children(recursive=True)
+                    for child in children: child.kill()
+                except: pass
+                proc.kill()
+                threat_killed = True
+                continue
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    if threat_killed: print("[>>>] EDR SWEEP COMPLETE. All Anomalies Purged.\n")
     def on_modified(self, event):
         if event.is_directory: return
         filepath = event.src_path
