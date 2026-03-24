@@ -104,12 +104,16 @@ def execute_kill_switch(attacked_file_path):
         score = calculate_entropy(filepath)
         if score > ENTROPY_THRESHOLD:
             print(f"\n[!!!] HIGH ENTROPY ALARM (Score: {score:.2f}/8.0) [!!!]")
+            if not is_header_valid(filepath):
+                execute_kill_switch(filepath)
+                return
         current_time = time.time()
         file_events.append((filepath, current_time))
         recent_unique_files = set(path for path, t in file_events if current_time - t <= 1.0)
         unique_file_count = len(recent_unique_files)
         if unique_file_count > 4:
             print(f"\n[!!!] RAPID FILE TRAVERSAL DETECTED ({unique_file_count} unique files/sec) [!!!]")
+            execute_kill_switch(filepath)
             file_events.clear()
 
 if __name__ == "__main__":
