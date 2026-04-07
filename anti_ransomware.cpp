@@ -11,6 +11,8 @@
 
 using namespace std;
 
+const double ENTROPY_THRESHOLD = 7.5;
+
 int main() {
     cout << "Anti-Ransomware Framework Initialized.\n";
     return 0;
