@@ -13,6 +13,12 @@ using namespace std;
 
 const double ENTROPY_THRESHOLD = 7.5;
 
+vector<string> TRUSTED_WHITELIST = {
+    "msmpeng.exe", "searchindexer.exe", "explorer.exe",
+    "system", "svchost.exe", "pycharm64.exe", "python.exe", 
+    "py.exe", "pythonw.exe", "new_guard.exe", "onedrive.exe"
+};
+
 string to_lower(const string& str) {
     string lower_str = str;
     transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
