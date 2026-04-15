@@ -13,6 +13,18 @@ using namespace std;
 
 const double ENTROPY_THRESHOLD = 7.5;
 
+
+vector<string> CORE_OS_FILES = {
+    "explorer.exe", "winlogon.exe", "dwm.exe", "sihost.exe",
+    "svchost.exe", "csrss.exe", "smss.exe", "lsass.exe",
+    "services.exe", "wininit.exe", "fontdrvhost.exe",
+    "sgrmbroker.exe", "system", "registry", "taskhostw.exe",
+    "conhost.exe", "cmd.exe", "python.exe", "py.exe", "pythonw.exe", 
+    "pycharm64.exe", "new_guard.exe", "startmenuexperiencehost.exe", 
+    "runtimebroker.exe", "searchapp.exe", "smartscreen.exe", 
+    "securityhealthsystray.exe", "vboxtray.exe",
+    "applicationframehost.exe", "ctfmon.exe"
+};
 vector<string> TRUSTED_WHITELIST = {
     "msmpeng.exe", "searchindexer.exe", "explorer.exe",
     "system", "svchost.exe", "pycharm64.exe", "python.exe", 
