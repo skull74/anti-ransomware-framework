@@ -8,6 +8,9 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <windows.h>
+#include <tlhelp32.h>
+#include <psapi.h>
 
 using namespace std;
 
