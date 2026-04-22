@@ -34,6 +34,10 @@ vector<string> TRUSTED_WHITELIST = {
     "py.exe", "pythonw.exe", "new_guard.exe", "onedrive.exe"
 };
 
+
+double calculate_entropy(const string& file_path) {
+    return 0.0;
+}
 string to_lower(const string& str) {
     string lower_str = str;
     transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
