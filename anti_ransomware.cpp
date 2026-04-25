@@ -36,6 +36,10 @@ vector<string> TRUSTED_WHITELIST = {
 
 
 double calculate_entropy(const string& file_path) {
+    int wchars_num = MultiByteToWideChar(CP_UTF8, 0, file_path.c_str(), -1, NULL, 0);
+    vector<wchar_t> wstr(wchars_num + 1, 0);
+    MultiByteToWideChar(CP_UTF8, 0, file_path.c_str(), -1, wstr.data(), wchars_num);
+    return 0.0;
     return 0.0;
 }
 string to_lower(const string& str) {
