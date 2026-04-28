@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <cmath>
 #include <algorithm>
 #include <windows.h>
@@ -39,8 +40,40 @@ double calculate_entropy(const string& file_path) {
     int wchars_num = MultiByteToWideChar(CP_UTF8, 0, file_path.c_str(), -1, NULL, 0);
     vector<wchar_t> wstr(wchars_num + 1, 0);
     MultiByteToWideChar(CP_UTF8, 0, file_path.c_str(), -1, wstr.data(), wchars_num);
-    return 0.0;
-    return 0.0;
+    HANDLE hFile = CreateFileW(wstr.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        char buffer[8192];
+        DWORD bytesRead = 0;
+        if (ReadFile(hFile, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
+            CloseHandle(hFile);
+            unordered_map<char, int> counts;
+            for (size_t i = 0; i < bytesRead; ++i) counts[buffer[i]]++;
+            double entropy = 0.0;
+            for (auto const& pair : counts) {
+                double p_x = (double)pair.second / bytesRead;
+                entropy -= p_x * (log(p_x) / log(2.0));
+            }
+            return entropy;
+        }
+        CloseHandle(hFile);
+    }
+    HANDLE hFile = CreateFileW(wstr.data(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        char buffer[8192];
+        DWORD bytesRead = 0;
+        if (ReadFile(hFile, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0) {
+            CloseHandle(hFile);
+            unordered_map<char, int> counts;
+            for (size_t i = 0; i < bytesRead; ++i) counts[buffer[i]]++;
+            double entropy = 0.0;
+            for (auto const& pair : counts) {
+                double p_x = (double)pair.second / bytesRead;
+                entropy -= p_x * (log(p_x) / log(2.0));
+            }
+            return entropy;
+        }
+        CloseHandle(hFile);
+    }
 }
 string to_lower(const string& str) {
     string lower_str = str;
