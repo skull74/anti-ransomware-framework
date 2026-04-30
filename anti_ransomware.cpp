@@ -75,6 +75,10 @@ double calculate_entropy(const string& file_path) {
         CloseHandle(hFile);
     }
 }
+
+bool is_header_valid(const string& file_path) {
+    return false;
+}
 string to_lower(const string& str) {
     string lower_str = str;
     transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
