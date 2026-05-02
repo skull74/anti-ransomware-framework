@@ -76,8 +76,16 @@ double calculate_entropy(const string& file_path) {
     }
 }
 
-bool is_header_valid(const string& file_path) {
-    return false;
+    size_t dot_pos = file_path.find_last_of(".");
+    if (dot_pos == string::npos) return false;
+    string ext = to_lower(file_path.substr(dot_pos));
+
+    unordered_map<string, vector<unsigned char>> signatures = {
+        {".jpg", {0xFF, 0xD8, 0xFF}}, {".png", {0x89, 0x50, 0x4E, 0x47}}, {".pdf", {0x25, 0x50, 0x44, 0x46}},
+        {".zip", {0x50, 0x4B, 0x03, 0x04}}, {".docx", {0x50, 0x4B, 0x03, 0x04}}, {".xlsx", {0x50, 0x4B, 0x03, 0x04}}
+    };
+    if (signatures.find(ext) == signatures.end()) return false;
+    return true;
 }
 string to_lower(const string& str) {
     string lower_str = str;
