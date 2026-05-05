@@ -12,7 +12,14 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #include <psapi.h>
+#include <wintrust.h>
+#include <softpub.h>
+#include <mscat.h>
 
+
+#pragma comment(lib, "wintrust.lib")
+#pragma comment(lib, "crypt32.lib")
+#pragma comment(lib, "psapi.lib")
 using namespace std;
 
 const double ENTROPY_THRESHOLD = 7.5;
