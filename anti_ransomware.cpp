@@ -94,6 +94,28 @@ double calculate_entropy(const string& file_path) {
     if (signatures.find(ext) == signatures.end()) return false;
     return true;
 }
+
+
+bool VerifyEmbeddedSignature(LPCWSTR pwszSourceFile) {
+    LONG lStatus;
+    WINTRUST_FILE_INFO FileData;
+    memset(&FileData, 0, sizeof(FileData));
+    FileData.cbStruct = sizeof(WINTRUST_FILE_INFO);
+    FileData.pcwszFilePath = pwszSourceFile;
+    GUID WVTPolicyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+    WINTRUST_DATA WinTrustData;
+    memset(&WinTrustData, 0, sizeof(WinTrustData));
+    WinTrustData.cbStruct = sizeof(WinTrustData);
+    WinTrustData.dwUIChoice = WTD_UI_NONE;
+    WinTrustData.fdwRevocationChecks = WTD_REVOKE_NONE; 
+    WinTrustData.dwUnionChoice = WTD_CHOICE_FILE;
+    WinTrustData.dwStateAction = WTD_STATEACTION_VERIFY;
+    WinTrustData.pFile = &FileData;
+    lStatus = WinVerifyTrust(NULL, &WVTPolicyGUID, &WinTrustData);
+    WinTrustData.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(NULL, &WVTPolicyGUID, &WinTrustData);
+    return (lStatus == ERROR_SUCCESS);
+}
 string to_lower(const string& str) {
     string lower_str = str;
     transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
