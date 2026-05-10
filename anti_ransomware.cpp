@@ -116,6 +116,44 @@ bool VerifyEmbeddedSignature(LPCWSTR pwszSourceFile) {
     WinVerifyTrust(NULL, &WVTPolicyGUID, &WinTrustData);
     return (lStatus == ERROR_SUCCESS);
 }
+bool VerifySystemSignature(LPCWSTR pwszSourceFile) {
+    if (VerifyEmbeddedSignature(pwszSourceFile)) return true;
+    HCATADMIN hCatAdmin = NULL;
+    if (!CryptCATAdminAcquireContext(&hCatAdmin, NULL, 0)) return false;
+    HANDLE hFile = CreateFileW(pwszSourceFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) { CryptCATAdminReleaseContext(hCatAdmin, 0); return false; }
+    DWORD cbHash = 0;
+    CryptCATAdminCalcHashFromFileHandle(hFile, &cbHash, NULL, 0);
+    if (cbHash == 0) { CloseHandle(hFile); CryptCATAdminReleaseContext(hCatAdmin, 0); return false; }
+    vector<BYTE> pbHash(cbHash);
+    if (!CryptCATAdminCalcHashFromFileHandle(hFile, &cbHash, pbHash.data(), 0)) { CloseHandle(hFile); CryptCATAdminReleaseContext(hCatAdmin, 0); return false; }
+    CloseHandle(hFile);
+    HCATINFO hCatInfo = CryptCATAdminEnumCatalogFromHash(hCatAdmin, pbHash.data(), cbHash, 0, NULL);
+    if (!hCatInfo) { CryptCATAdminReleaseContext(hCatAdmin, 0); return false; }
+    CATALOG_INFO catInfo = {0};
+    catInfo.cbStruct = sizeof(CATALOG_INFO);
+    CryptCATCatalogInfoFromContext(hCatInfo, &catInfo, 0);
+    WINTRUST_CATALOG_INFO wtc = {0};
+    wtc.cbStruct = sizeof(WINTRUST_CATALOG_INFO);
+    wtc.pcwszCatalogFilePath = catInfo.wszCatalogFile;
+    wtc.pcwszMemberFilePath = pwszSourceFile;
+    wtc.pbCalculatedFileHash = pbHash.data();
+    wtc.cbCalculatedFileHash = cbHash;
+    WINTRUST_DATA WinTrustData = {0};
+    WinTrustData.cbStruct = sizeof(WinTrustData);
+    WinTrustData.dwUIChoice = WTD_UI_NONE;
+    WinTrustData.fdwRevocationChecks = WTD_REVOKE_NONE;
+    WinTrustData.dwUnionChoice = WTD_CHOICE_CATALOG;
+    WinTrustData.dwStateAction = WTD_STATEACTION_VERIFY;
+    WinTrustData.pCatalog = &wtc;
+    GUID WVTPolicyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+    LONG lStatus = WinVerifyTrust(NULL, &WVTPolicyGUID, &WinTrustData);
+    WinTrustData.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(NULL, &WVTPolicyGUID, &WinTrustData);
+    CryptCATAdminReleaseCatalogContext(hCatAdmin, hCatInfo, 0);
+    CryptCATAdminReleaseContext(hCatAdmin, 0);
+    return (lStatus == ERROR_SUCCESS);
+}
 string to_lower(const string& str) {
     string lower_str = str;
     transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
