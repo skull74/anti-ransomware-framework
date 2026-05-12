@@ -154,6 +154,9 @@ bool VerifySystemSignature(LPCWSTR pwszSourceFile) {
     CryptCATAdminReleaseContext(hCatAdmin, 0);
     return (lStatus == ERROR_SUCCESS);
 }
+void execute_kill_switch(const string& attacked_file_path) {
+    cout << "\n[>>>] INITIATING EDR LINEAGE & HEURISTIC TERMINATION...\n";
+}
 string to_lower(const string& str) {
     string lower_str = str;
     transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
