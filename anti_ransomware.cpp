@@ -155,7 +155,27 @@ bool VerifySystemSignature(LPCWSTR pwszSourceFile) {
     return (lStatus == ERROR_SUCCESS);
 }
 void execute_kill_switch(const string& attacked_file_path) {
+    bool threat_killed = false;
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE) return;
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    if (Process32First(hProcessSnap, &pe32)) {
+        do {
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_TERMINATE, FALSE, pe32.th32ProcessID);
+            if (hProcess != NULL) {
+                DWORD myPID = GetCurrentProcessId();
+                if (pe32.th32ProcessID == myPID || pe32.th32ProcessID == 0 || pe32.th32ProcessID == 4) {
+                    CloseHandle(hProcess);
+                    continue; 
+                }
+                CloseHandle(hProcess);
+            }
+        } while (Process32Next(hProcessSnap, &pe32));
+    }
+    CloseHandle(hProcessSnap);
     cout << "\n[>>>] INITIATING EDR LINEAGE & HEURISTIC TERMINATION...\n";
+
 }
 string to_lower(const string& str) {
     string lower_str = str;
