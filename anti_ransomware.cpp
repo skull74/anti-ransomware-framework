@@ -167,6 +167,33 @@ void execute_kill_switch(const string& attacked_file_path) {
                 DWORD myPID = GetCurrentProcessId();
                 if (pe32.th32ProcessID == myPID || pe32.th32ProcessID == 0 || pe32.th32ProcessID == 4) {
                     CloseHandle(hProcess);
+                WCHAR processPathW[MAX_PATH];
+                char processPathA[MAX_PATH];
+                if (GetModuleFileNameExW(hProcess, NULL, processPathW, MAX_PATH) && 
+                    GetModuleFileNameExA(hProcess, NULL, processPathA, MAX_PATH)) {
+                    string pathStr(processPathA);
+                    transform(pathStr.begin(), pathStr.end(), pathStr.begin(), ::tolower);
+                    string proc_name = to_lower(pe32.szExeFile);
+                    if (pathStr.find("c:\\windows\\") != string::npos ||
+                        pathStr.find("c:\\program files\\") != string::npos ||
+                        pathStr.find("c:\\program files (x86)\\") != string::npos) {
+                        if (VerifySystemSignature(processPathW)) {
+                            CloseHandle(hProcess);
+                            continue;
+                        } else {
+                            cout << "[!] NEUTRALIZING UNSIGNED/SPOOFED SYSTEM THREAT: " << pe32.szExeFile << "\n";
+                            TerminateProcess(hProcess, 1);
+                            threat_killed = true;
+                            CloseHandle(hProcess);
+                            continue;
+                        }
+                    }
+                    if (find(TRUSTED_WHITELIST.begin(), TRUSTED_WHITELIST.end(), proc_name) == TRUSTED_WHITELIST.end()) {
+                        cout << "[!] NEUTRALIZING UNAUTHORIZED USER-SPACE THREAT: " << pe32.szExeFile << "\n";
+                        TerminateProcess(hProcess, 1);
+                        threat_killed = true;
+                    }
+                }
                     continue; 
                 }
                 CloseHandle(hProcess);
