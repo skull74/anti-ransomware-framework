@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <queue>
+#include <unordered_set>
 #include <cmath>
 #include <algorithm>
 #include <windows.h>
@@ -154,6 +156,20 @@ bool VerifySystemSignature(LPCWSTR pwszSourceFile) {
     CryptCATAdminReleaseContext(hCatAdmin, 0);
     return (lStatus == ERROR_SUCCESS);
 }
+
+struct FileEvent { string filepath; DWORD timestamp; };
+class ThreadPool {
+public:
+    ThreadPool(size_t numThreads);
+    ~ThreadPool();
+    void enqueue(const string& path);
+private:
+    vector<HANDLE> workers; queue<string> tasks;
+    CRITICAL_SECTION queue_cs; CONDITION_VARIABLE condition;
+    bool stop; CRITICAL_SECTION traversal_cs; queue<FileEvent> file_events;
+    static DWORD WINAPI ThreadProc(LPVOID lpParam);
+    void worker_thread();
+};
 void execute_kill_switch(const string& attacked_file_path) {
     bool threat_killed = false;
     HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
