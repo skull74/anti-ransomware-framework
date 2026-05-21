@@ -170,6 +170,27 @@ private:
     static DWORD WINAPI ThreadProc(LPVOID lpParam);
     void worker_thread();
 };
+
+ThreadPool::ThreadPool(size_t numThreads) : stop(false) {
+    InitializeCriticalSection(&queue_cs);
+    InitializeConditionVariable(&condition);
+    InitializeCriticalSection(&traversal_cs);
+    for (size_t i = 0; i < numThreads; ++i) {
+        HANDLE hThread = CreateThread(NULL, 0, ThreadPool::ThreadProc, this, 0, NULL);
+        if (hThread) workers.push_back(hThread);
+    }
+}
+ThreadPool::~ThreadPool() {
+    EnterCriticalSection(&queue_cs); stop = true; LeaveCriticalSection(&queue_cs);
+    WakeAllConditionVariable(&condition);
+    WaitForMultipleObjects((DWORD)workers.size(), workers.data(), TRUE, INFINITE);
+    for (HANDLE h : workers) CloseHandle(h);
+    DeleteCriticalSection(&queue_cs); DeleteCriticalSection(&traversal_cs);
+}
+void ThreadPool::enqueue(const string& path) {
+    EnterCriticalSection(&queue_cs); tasks.push(path); LeaveCriticalSection(&queue_cs); WakeConditionVariable(&condition);
+}
+DWORD WINAPI ThreadPool::ThreadProc(LPVOID lpParam) { ThreadPool* pool = static_cast<ThreadPool*>(lpParam); pool->worker_thread(); return 0; }
 void execute_kill_switch(const string& attacked_file_path) {
     bool threat_killed = false;
     HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
