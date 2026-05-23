@@ -191,6 +191,22 @@ void ThreadPool::enqueue(const string& path) {
     EnterCriticalSection(&queue_cs); tasks.push(path); LeaveCriticalSection(&queue_cs); WakeConditionVariable(&condition);
 }
 DWORD WINAPI ThreadPool::ThreadProc(LPVOID lpParam) { ThreadPool* pool = static_cast<ThreadPool*>(lpParam); pool->worker_thread(); return 0; }
+
+void ThreadPool::worker_thread() {
+    while (true) {
+        string filepath;
+        EnterCriticalSection(&queue_cs);
+        while (tasks.empty() && !stop) { SleepConditionVariableCS(&condition, &queue_cs, INFINITE); }
+        if (stop && tasks.empty()) { LeaveCriticalSection(&queue_cs); return; }
+        filepath = tasks.front(); tasks.pop();
+        LeaveCriticalSection(&queue_cs);
+
+        double score = calculate_entropy(filepath);
+        if (score > ENTROPY_THRESHOLD) {
+            if (!is_header_valid(filepath)) { execute_kill_switch(filepath); continue; }
+        }
+    }
+}
 void execute_kill_switch(const string& attacked_file_path) {
     bool threat_killed = false;
     HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
