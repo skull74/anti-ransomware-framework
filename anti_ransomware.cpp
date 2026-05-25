@@ -203,7 +203,39 @@ void ThreadPool::worker_thread() {
 
         double score = calculate_entropy(filepath);
         if (score > ENTROPY_THRESHOLD) {
+        EnterCriticalSection(&traversal_cs);
+        DWORD current_time = GetTickCount();
+        file_events.push({filepath, current_time});
+        while (!file_events.empty()) {
+            if ((current_time - file_events.front().timestamp) > 1000) file_events.pop();
+            else break;
+        }
+        unordered_set<string> unique_files;
+        queue<FileEvent> temp_events = file_events;
+        while (!temp_events.empty()) { unique_files.insert(temp_events.front().filepath); temp_events.pop(); }
+        if (unique_files.size() > 4) {
+            cout << "\n[!!!] RAPID FILE TRAVERSAL DETECTED\n";
+            execute_kill_switch(filepath);
+            while (!file_events.empty()) file_events.pop();
+        }
+        LeaveCriticalSection(&traversal_cs);
             if (!is_header_valid(filepath)) { execute_kill_switch(filepath); continue; }
+        EnterCriticalSection(&traversal_cs);
+        DWORD current_time = GetTickCount();
+        file_events.push({filepath, current_time});
+        while (!file_events.empty()) {
+            if ((current_time - file_events.front().timestamp) > 1000) file_events.pop();
+            else break;
+        }
+        unordered_set<string> unique_files;
+        queue<FileEvent> temp_events = file_events;
+        while (!temp_events.empty()) { unique_files.insert(temp_events.front().filepath); temp_events.pop(); }
+        if (unique_files.size() > 4) {
+            cout << "\n[!!!] RAPID FILE TRAVERSAL DETECTED\n";
+            execute_kill_switch(filepath);
+            while (!file_events.empty()) file_events.pop();
+        }
+        LeaveCriticalSection(&traversal_cs);
         }
     }
 }
