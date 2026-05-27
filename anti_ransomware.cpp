@@ -295,6 +295,35 @@ string to_lower(const string& str) {
     return lower_str;
 }
 
+
+struct FSWatcherContext { ThreadPool* pool; wstring watch_dir; };
+
+DWORD WINAPI filesystem_watcher_thread(LPVOID lpParam) {
+    FSWatcherContext* ctx = static_cast<FSWatcherContext*>(lpParam);
+    HANDLE hDir = CreateFileW(ctx->watch_dir.c_str(), FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hDir == INVALID_HANDLE_VALUE) return 1;
+    char buffer[32768]; DWORD bytesReturned;
+    while (true) {
+        if (ReadDirectoryChangesW(hDir, &buffer, sizeof(buffer), TRUE, FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE, &bytesReturned, NULL, NULL)) {
+            FILE_NOTIFY_INFORMATION* pNotify = (FILE_NOTIFY_INFORMATION*)buffer;
+            do {
+                if (pNotify->Action == FILE_ACTION_ADDED || pNotify->Action == FILE_ACTION_MODIFIED) {
+                    wstring fileName(pNotify->FileName, pNotify->FileNameLength / sizeof(WCHAR));
+                    char fullPath[MAX_PATH]; WideCharToMultiByte(CP_UTF8, 0, ctx->watch_dir.c_str(), -1, fullPath, MAX_PATH, NULL, NULL);
+                    char mbFilename[MAX_PATH]; WideCharToMultiByte(CP_UTF8, 0, fileName.c_str(), -1, mbFilename, MAX_PATH, NULL, NULL);
+                    string path_str = string(fullPath) + "\\" + string(mbFilename);
+                    string lower_path = to_lower(path_str);
+                    if (lower_path.find("\\appdata\\") == string::npos && lower_path.find("ntuser.dat") == string::npos) {
+                        ctx->pool->enqueue(path_str);
+                    }
+                }
+                if (pNotify->NextEntryOffset == 0) break;
+                pNotify = (FILE_NOTIFY_INFORMATION*)((BYTE*)pNotify + pNotify->NextEntryOffset);
+            } while (true);
+        } else { Sleep(100); }
+    }
+    return 0;
+}
 int main() {
     cout << "Anti-Ransomware Framework Initialized.\n";
     return 0;
