@@ -324,7 +324,18 @@ DWORD WINAPI filesystem_watcher_thread(LPVOID lpParam) {
     }
     return 0;
 }
+}
 int main() {
-    cout << "Anti-Ransomware Framework Initialized.\n";
+    cout << "==================================================\n";
+    cout << "   AUTOMATED ANTI-RANSOMWARE C++ FRAMEWORK BOOTING\n";
+    cout << "==================================================\n";
+    char profile[MAX_PATH]; ExpandEnvironmentStringsA("%USERPROFILE%", profile, MAX_PATH);
+    string sprofile(profile); wstring watch_dir(sprofile.begin(), sprofile.end());
+    SYSTEM_INFO sysinfo; GetSystemInfo(&sysinfo);
+    int num_threads = sysinfo.dwNumberOfProcessors == 0 ? 4 : sysinfo.dwNumberOfProcessors;
+    ThreadPool pool(num_threads);
+    FSWatcherContext fsCtx; fsCtx.pool = &pool; fsCtx.watch_dir = watch_dir;
+    HANDLE hFSWatcher = CreateThread(NULL, 0, filesystem_watcher_thread, &fsCtx, 0, NULL);
+    WaitForSingleObject(hFSWatcher, INFINITE);
     return 0;
 }
