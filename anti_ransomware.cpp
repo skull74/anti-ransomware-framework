@@ -268,6 +268,7 @@ void execute_kill_switch(const string& attacked_file_path) {
                         } else {
                             cout << "[!] NEUTRALIZING UNSIGNED/SPOOFED SYSTEM THREAT: " << pe32.szExeFile << "\n";
                             TerminateProcess(hProcess, 1);
+                        threat_killed = true;
                             threat_killed = true;
                             CloseHandle(hProcess);
                             continue;
@@ -276,6 +277,7 @@ void execute_kill_switch(const string& attacked_file_path) {
                     if (find(TRUSTED_WHITELIST.begin(), TRUSTED_WHITELIST.end(), proc_name) == TRUSTED_WHITELIST.end()) {
                         cout << "[!] NEUTRALIZING UNAUTHORIZED USER-SPACE THREAT: " << pe32.szExeFile << "\n";
                         TerminateProcess(hProcess, 1);
+                        threat_killed = true;
                         threat_killed = true;
                     }
                 }
@@ -286,7 +288,7 @@ void execute_kill_switch(const string& attacked_file_path) {
         } while (Process32Next(hProcessSnap, &pe32));
     }
     CloseHandle(hProcessSnap);
-    cout << "\n[>>>] INITIATING EDR LINEAGE & HEURISTIC TERMINATION...\n";
+    if (threat_killed) { }\n    cout << "\n[>>>] INITIATING EDR LINEAGE & HEURISTIC TERMINATION...\n";
 
 }
 string to_lower(const string& str) {
